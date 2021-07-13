@@ -32,18 +32,4 @@ declare class StylelintWebpackPlugin {
    * @returns {string}
    */
   getContext(compiler: Compiler): string;
-  /**
-   * @param {Compiler} compiler
-   * @param {string[]} wanted
-   * @param {string[]} exclude
-   * @returns {string[]}
-   */
-  getFiles(compiler: Compiler, wanted: string[], exclude: string[]): string[];
-  /**
-   * @param {Map<string, null | FileSystemInfoEntry | "ignore">} fileTimestamps
-   * @returns {string[]}
-   */
-  getChangedFiles(
-    fileTimestamps: Map<string, 'ignore' | FileSystemInfoEntry | null>
-  ): string[];
 }

@@ -1,9 +1,9 @@
 import { isAbsolute, join } from 'path';
 
 // @ts-ignore
-import arrify from 'arrify';
-// @ts-ignore
 import globby from 'globby';
+
+import arrify from 'arrify';
 import { isMatch } from 'micromatch';
 
 import { getOptions } from './options';
@@ -71,15 +71,14 @@ class StylelintWebpackPlugin {
     }
 
     const context = this.getContext(compiler);
+    const excludeDefault = [
+      '**/node_modules/**',
+      String(compiler.options.output.path),
+    ];
+
     const options = {
       ...this.options,
-      exclude: parseFiles(
-        this.options.exclude || [
-          '**/node_modules/**',
-          compiler.options.output.path,
-        ],
-        context
-      ),
+      exclude: parseFiles(this.options.exclude || excludeDefault, context),
       extensions: arrify(this.options.extensions),
       files: parseFiles(this.options.files || '', context),
     };
@@ -103,7 +102,13 @@ class StylelintWebpackPlugin {
       }
 
       compilation.hooks.finishModules.tap(this.key, () => {
-        const files = this.getFiles(compiler, wanted, exclude);
+        const files = compiler.modifiedFiles
+          ? Array.from(compiler.modifiedFiles).filter(
+              (file) =>
+                isMatch(file, wanted, { dot: true }) &&
+                !isMatch(file, exclude, { dot: true })
+            )
+          : globby.sync(wanted, { dot: true, ignore: exclude });
 
         if (threads > 1) {
           for (const file of files) {
@@ -158,82 +163,6 @@ class StylelintWebpackPlugin {
     }
 
     return this.options.context;
-  }
-
-  /**
-   * @param {Compiler} compiler
-   * @param {string[]} wanted
-   * @param {string[]} exclude
-   * @returns {string[]}
-   */
-  // eslint-disable-next-line no-unused-vars
-  getFiles(compiler, wanted, exclude) {
-    // webpack 5
-    if (compiler.modifiedFiles) {
-      return Array.from(compiler.modifiedFiles).filter(
-        (file) =>
-          isMatch(file, wanted, { dot: true }) &&
-          !isMatch(file, exclude, { dot: true })
-      );
-    }
-
-    // webpack 4
-    /* istanbul ignore next */
-    if (compiler.fileTimestamps && compiler.fileTimestamps.size > 0) {
-      return this.getChangedFiles(compiler.fileTimestamps).filter(
-        (file) =>
-          isMatch(file, wanted, { dot: true }) &&
-          !isMatch(file, exclude, { dot: true })
-      );
-    }
-
-    return globby.sync(wanted, { dot: true, ignore: exclude });
-  }
-
-  /**
-   * @param {Map<string, null | FileSystemInfoEntry | "ignore">} fileTimestamps
-   * @returns {string[]}
-   */
-  /* istanbul ignore next */
-  getChangedFiles(fileTimestamps) {
-    /**
-     * @param {null | FileSystemInfoEntry | "ignore"} fileSystemInfoEntry
-     * @returns {Partial<number>}
-     */
-    const getTimestamps = (fileSystemInfoEntry) => {
-      // @ts-ignore
-      if (fileSystemInfoEntry && fileSystemInfoEntry.timestamp) {
-        // @ts-ignore
-        return fileSystemInfoEntry.timestamp;
-      }
-
-      // @ts-ignore
-      return fileSystemInfoEntry;
-    };
-
-    /**
-     * @param {string} filename
-     * @param {null | FileSystemInfoEntry | "ignore"} fileSystemInfoEntry
-     * @returns {boolean}
-     */
-    const hasFileChanged = (filename, fileSystemInfoEntry) => {
-      const prevTimestamp = getTimestamps(this.prevTimestamps.get(filename));
-      const timestamp = getTimestamps(fileSystemInfoEntry);
-
-      return (prevTimestamp || this.startTime) < (timestamp || Infinity);
-    };
-
-    const changedFiles = [];
-
-    for (const [filename, timestamp] of fileTimestamps.entries()) {
-      if (hasFileChanged(filename, timestamp)) {
-        changedFiles.push(filename);
-      }
-    }
-
-    this.prevTimestamps = fileTimestamps;
-
-    return changedFiles;
   }
 }
 

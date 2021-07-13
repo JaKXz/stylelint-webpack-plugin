@@ -7,7 +7,7 @@ import pack from './utils/pack';
 const target = join(__dirname, 'fixtures', 'watch', 'entry.scss');
 const target2 = join(__dirname, 'fixtures', 'watch', 'leaf.scss');
 
-describe.skip('watch', () => {
+describe('watch', () => {
   let watch;
   afterEach(() => {
     if (watch) {

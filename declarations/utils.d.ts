@@ -1,12 +1,9 @@
 /**
- * @param {string|(string|undefined)[]} files
+ * @param {string|string[]} files
  * @param {string} context
  * @returns {string[]}
  */
-export function parseFiles(
-  files: string | (string | undefined)[],
-  context: string
-): string[];
+export function parseFiles(files: string | string[], context: string): string[];
 /**
  * @param {string|string[]} patterns
  * @param {string|string[]} extensions

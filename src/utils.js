@@ -1,20 +1,20 @@
 import { resolve } from 'path';
 import { statSync } from 'fs';
 
-// @ts-ignore
-import normalizePath from 'normalize-path';
-// @ts-ignore
 import arrify from 'arrify';
 
+// @ts-ignore
+import normalizePath from 'normalize-path';
+
 /**
- * @param {string|(string|undefined)[]} files
+ * @param {string|string[]} files
  * @param {string} context
  * @returns {string[]}
  */
 export function parseFiles(files, context) {
-  return arrify(files)
-    .filter((/** @type {string} */ file) => typeof file === 'string')
-    .map((/** @type {string} */ file) => normalizePath(resolve(context, file)));
+  return arrify(files).map((/** @type {string} */ file) =>
+    normalizePath(resolve(context, file))
+  );
 }
 
 /**
